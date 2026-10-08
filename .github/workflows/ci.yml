@@ -87,11 +87,12 @@ jobs:
         run: |
           mkdir -p dist
           cp "target/${{ matrix.target }}/release/${{ matrix.exe }}" dist/
+          if [ "${{ runner.os }}" = "Windows" ]; then cp scripts/add-to-path.ps1 scripts/add-to-path.bat dist/; fi
           ls -l dist
       - uses: actions/upload-artifact@v4
         with:
           name: repro-${{ matrix.target }}
-          path: dist/${{ matrix.exe }}
+          path: dist/
           if-no-files-found: error
       - name: Binary must be under 5 MB
         run: |
@@ -152,4 +153,5 @@ jobs:
           mv dist/repro-x86_64-pc-windows-msvc/repro.exe dist/repro-x86_64-pc-windows-msvc.exe
           mv dist/repro-x86_64-unknown-linux-musl/repro dist/repro-x86_64-unknown-linux-musl
           gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --generate-notes \
-            dist/repro-x86_64-pc-windows-msvc.exe dist/repro-x86_64-unknown-linux-musl
+            dist/repro-x86_64-pc-windows-msvc.exe dist/repro-x86_64-unknown-linux-musl \
+            dist/repro-x86_64-pc-windows-msvc/add-to-path.ps1 dist/repro-x86_64-pc-windows-msvc/add-to-path.bat

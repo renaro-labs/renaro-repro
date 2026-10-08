@@ -2,3 +2,6 @@
 * text=auto eol=lf
 *.parquet binary
 *.exe binary
+# cmd.exe can mis-parse labels in LF-only batch files.
+*.bat text eol=crlf
+*.cmd text eol=crlf
