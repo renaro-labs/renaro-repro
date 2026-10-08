@@ -1,0 +1,35 @@
+# repro.toml: tells `repro check` how to run and judge your experiment.
+# Every path is relative to the directory holding this file (the project root).
+
+[project]
+name = "fasa"
+config = "configs/toy.yaml"   # experiment YAML; hashed canonically (key order and comments do not matter)
+seed = 1234                   # global seed, passed as {seed} and REPRO_SEED
+timeout_s = 600               # per-run timeout; the command is killed after this
+
+[run]
+# Placeholders: {run_dir} {seed} {run_id} {cache_dir} {config}
+# Env vars set for the command: REPRO_RUN_DIR REPRO_RUN_ID REPRO_SEED REPRO_CACHE_DIR REPRO_CONFIG_HASH
+command = ["python", "-m", "eval.toy", "--config", "{config}", "--out", "{run_dir}", "--seed", "{seed}"]
+# Recorded in provenance, and the only variables passed through with --strict-env.
+env_allow = ["CUDA_VISIBLE_DEVICES", "OMP_NUM_THREADS", "PYTHONHASHSEED"]
+
+[outputs]
+# Files in the run directory that must be byte-identical between runs.
+include = ["**/*.parquet", "**/*.jsonl", "**/*.json", "**/*.csv", "**/*.txt"]
+exclude = ["**/tmp/**"]
+
+# Declared, visible exceptions. Every use is listed in the verdict.
+[[normalize]]
+files = "**/*.log.jsonl"
+drop_json_fields = ["ts", "run_id", "wall_ms"]
+reason = "timestamps and run id differ by design"
+# Other actions: drop_csv_columns = ["wall_ms"], sort_lines = true
+
+[cache]
+log = "{run_dir}/cache.jsonl"   # written by your cache layer, one JSON event per line
+required_key_parts = ["state_hash", "expert", "schema_version", "seed"]
+
+[inputs]
+# Hashed and recorded as provenance in every manifest.
+files = ["data/test/**", "serve/*.yaml", "uv.lock"]
