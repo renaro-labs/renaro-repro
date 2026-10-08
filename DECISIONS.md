@@ -38,5 +38,6 @@ One line each: where the spec was ambiguous, the simplest reasonable option was 
 - Paths are made absolute with `std::path::absolute` (not `canonicalize`) so `{run_dir}` never gets a `\\?\` prefix.
 - Windows binary links the C runtime statically (`.cargo/config.toml`) so it runs on a fresh machine.
 - Parquet: without the `parquet` feature only the byte offset is reported (with a note); with it, differing columns, row groups and the first differing row.
+- The optional `parquet` crate is pinned to 60.x, the first release without the unmaintained `paste` crate (RUSTSEC-2024-0436); it needs Rust 1.88+, the default build still needs only 1.82.
 - Fixtures write `value_blake3` as SHA-256 (Python's standard library has no BLAKE3); repro only compares these values for equality.
 - `cargo deny check advisories` runs in CI but cannot fail the build (`continue-on-error`).
