@@ -1,0 +1,42 @@
+# Decisions
+
+One line each: where the spec was ambiguous, the simplest reasonable option was picked.
+
+- Built without local compilation (by request): all compiling, linting and testing happens in GitHub Actions; locally only `rustfmt` and Python `py_compile` were run.
+- YAML crate: `serde_norway` (maintained fork of serde_yaml); used only to parse the experiment config for hashing.
+- Canonical config JSON: keys sorted by bytes, floats in shortest round-trip form, ints and floats stay distinct (`1` ≠ `1.0`, `1e-3` = `0.001`), strings as parsed, tags kept as `{"!tag":…}`; YAML merge keys (`<<`) are not expanded.
+- No colour crate: ANSI codes are written directly (VT mode enabled on Windows); off when not a TTY or when `NO_COLOR` is set.
+- `--runs` must be ≥ 2; the seed defaults to 0 with a warning when neither `--seed` nor `[project].seed` is set.
+- Run ids are `repro-<first 8 hex of config hash>-<i>` (`-seed` for the seed+1 run); without a config, the command's hash is used.
+- Work directory is `.repro-work/` (flag `--work-dir`); it carries a marker file and is only ever deleted when that marker is present.
+- `--out` may contain only repro's own files (`report.*`, `manifests/`, marker) unless `--force`; with `--force` other files are left untouched.
+- Every non-identical check (file mismatch, cache issue, wrong config hash, ignored seed, cold-warm misses) gives `DIFFERENT`, exit 1.
+- A run with zero matched outputs is `ERROR`, exit 2 (nothing was compared).
+- The first failing run stops the remaining runs; the verdict is `ERROR`, exit 3, and run directories are kept.
+- The cache log, when inside the run directory, is excluded from byte comparison and compared semantically instead.
+- `IDENTICAL (after N …)` counts the rules that were actually needed (raw hashes differed, normalized hashes matched), not every rule that matched a file.
+- Normalized JSON/JSONL records are re-serialized with sorted keys, so key order is ignored inside declared-normalized files only.
+- Normalization supports `drop_json_fields` (top-level or dotted paths), `drop_csv_columns` (by header name, simple quoted CSV) and `sort_lines`; line endings are never changed.
+- Normalization streams line by line for hashing; whole-file JSON and `sort_lines` are held in memory.
+- Localization of normalized files uses an in-memory normalized copy (≤ 64 MiB), else falls back to the raw bytes.
+- At most 10 mismatching files per comparison are localized; unified diffs are capped at 40 lines, with 3 lines of context.
+- Config hash check: the first JSON output (`run_meta.json` preferred, < 1 MiB) with a top-level `config_hash`; a prefix of ≥ 8 hex chars is accepted; absent = warning, wrong = failure.
+- `cold-cold` mode check: the first lookup of each key in a run must be a miss, and all runs must have the same `(event, key, value_blake3)` sequence.
+- `repro cache-log` without `--mode` treats each log as an independent cold run (no mode checks).
+- `hit_rate` = hits / (hits + misses); stores are not lookups.
+- `repro hash`/`verify` manifest paths are relative to `--root` (default: current directory); arguments outside it are rejected.
+- `repro hash` writes no provenance by default (so golden manifests stay stable across machines); `--provenance` adds it.
+- `repro hash` refuses to overwrite an existing file that is not a repro manifest.
+- The hash cache (`.repro-cache/hashes.json`) is used only in a directory with `repro.toml`, only for files ≥ 1 MiB whose mtime is > 2 s old.
+- Hashing reads 1 MiB blocks; blocks ≥ 128 KiB use BLAKE3's rayon mode; up to 4 files are hashed at once (bounded memory).
+- `--strict-env` keeps `PATH, HOME, USERPROFILE, TMPDIR, TEMP, TMP, SYSTEMROOT, SYSTEMDRIVE, WINDIR, COMSPEC, PATHEXT, LANG` plus `[run].env_allow`, because programs cannot start without them.
+- Timeouts kill the direct child only (not its whole process tree).
+- Peak memory: `wait4` `ru_maxrss` on Linux (manual FFI, no `libc` crate); `K32GetProcessMemoryInfo` peak working set on Windows; omitted elsewhere.
+- `git_dirty` ignores untracked files (`git status --porcelain --untracked-files=no`), so repro's own directories never make a tree dirty.
+- OS name: `windows-10`/`windows-11` from the `ver` build number; Linux adds `ID` and `VERSION_ID` from `/etc/os-release`.
+- Glob patterns treat `\` as a path separator (no escaping) so Windows-style patterns work.
+- Paths are made absolute with `std::path::absolute` (not `canonicalize`) so `{run_dir}` never gets a `\\?\` prefix.
+- Windows binary links the C runtime statically (`.cargo/config.toml`) so it runs on a fresh machine.
+- Parquet: without the `parquet` feature only the byte offset is reported (with a note); with it, differing columns, row groups and the first differing row.
+- Fixtures write `value_blake3` as SHA-256 (Python's standard library has no BLAKE3); repro only compares these values for equality.
+- `cargo deny check advisories` runs in CI but cannot fail the build (`continue-on-error`).
