@@ -1,0 +1,9 @@
+# Toy experiment config. repro hashes its canonical JSON, so comments and key order do not matter.
+model: toy-router
+lr: 0.0
+splits:
+  train: 0.8
+  test: 0.2
+experts:
+  - qwen2.5-math-7b
+  - llama-3-8b

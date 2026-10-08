@@ -1,0 +1,24 @@
+[project]
+name = "good"
+config = "configs/toy.yaml"
+seed = 1234
+timeout_s = 120
+
+[run]
+command = ["python", "exp.py", "--config", "{config}", "--out", "{run_dir}", "--seed", "{seed}", "--cache-dir", "{cache_dir}"]
+env_allow = ["PYTHONHASHSEED", "OMP_NUM_THREADS"]
+
+[outputs]
+include = ["**/*.csv", "**/*.jsonl", "**/*.json"]
+
+[[normalize]]
+files = "**/*.log.jsonl"
+drop_json_fields = ["ts", "run_id", "wall_ms"]
+reason = "timestamps and run id differ by design"
+
+[cache]
+log = "{run_dir}/cache.jsonl"
+required_key_parts = ["state_hash", "expert", "schema_version", "seed"]
+
+[inputs]
+files = ["configs/*.yaml", "exp.py"]

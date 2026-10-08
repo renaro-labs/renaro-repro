@@ -1,0 +1,10 @@
+[project]
+name = "unordered"
+seed = 1234
+timeout_s = 120
+
+[run]
+command = ["python", "exp.py", "--out", "{run_dir}", "--seed", "{seed}", "--cache-dir", "{cache_dir}"]
+
+[outputs]
+include = ["**/*.jsonl"]
