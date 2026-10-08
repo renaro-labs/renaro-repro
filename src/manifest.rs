@@ -146,7 +146,7 @@ pub fn walk_files(root: &Path, sel: &Selector, skip_dirs: &[String]) -> Result<V
                 .strip_prefix(root)
                 .map(util::to_slash)
                 .unwrap_or_default();
-            !skip_dirs.iter().any(|s| *s == rel)
+            !skip_dirs.contains(&rel)
         });
     for entry in walker {
         let entry = entry.with_context(|| format!("cannot list {}", root.display()))?;

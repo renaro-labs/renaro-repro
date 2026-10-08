@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 use globset::GlobMatcher;
 use serde_json::Value;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 
 pub struct Normalizer {

@@ -138,7 +138,7 @@ pub fn run(spec: &RunSpec) -> RunOutcome {
         for (k, v) in std::env::vars_os() {
             let name = k.to_string_lossy().to_string();
             let keep = ESSENTIAL_ENV.iter().any(|e| e.eq_ignore_ascii_case(&name))
-                || allow.iter().any(|a| *a == name);
+                || allow.contains(&name);
             if keep {
                 cmd.env(k, v);
             }
