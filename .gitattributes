@@ -1,0 +1,4 @@
+# Same bytes on every checkout (Windows and Linux): a reproducibility tool must not depend on autocrlf.
+* text=auto eol=lf
+*.parquet binary
+*.exe binary
