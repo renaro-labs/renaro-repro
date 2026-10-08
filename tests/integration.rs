@@ -4,8 +4,10 @@
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 const BIN: &str = env!("CARGO_BIN_EXE_repro");
+static NEXT_TMP_ID: AtomicUsize = AtomicUsize::new(0);
 
 fn python() -> Option<String> {
     for cand in ["python3", "python", "py"] {
@@ -54,17 +56,20 @@ fn fixture(name: &str) -> PathBuf {
         .join("tests")
         .join("fixtures")
         .join(name);
-    let dst = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("fixture-{name}"));
-    let _ = std::fs::remove_dir_all(&dst);
+    let dst = unique_tmp_dir(&format!("fixture-{name}"));
     copy_dir(&src, &dst);
     dst
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let d = Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("scratch-{name}"));
-    let _ = std::fs::remove_dir_all(&d);
+    let d = unique_tmp_dir(&format!("scratch-{name}"));
     std::fs::create_dir_all(&d).unwrap();
     d
+}
+
+fn unique_tmp_dir(prefix: &str) -> PathBuf {
+    let id = NEXT_TMP_ID.fetch_add(1, Ordering::Relaxed);
+    Path::new(env!("CARGO_TARGET_TMPDIR")).join(format!("{prefix}-{id}"))
 }
 
 struct Res {
@@ -189,6 +194,13 @@ fn good_fixture_is_identical_after_one_normalization() {
         "repro-12345678-1".len()
     );
     assert!(m["files"].as_array().unwrap().len() >= 3);
+}
+
+#[test]
+fn fixture_paths_are_unique_per_call() {
+    let a = fixture("good");
+    let b = fixture("good");
+    assert_ne!(a, b);
 }
 
 #[test]
