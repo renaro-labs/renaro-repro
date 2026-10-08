@@ -63,9 +63,11 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             exe: repro.exe
+            label: windows-x64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             exe: repro
+            label: linux-x64
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -91,7 +93,7 @@ jobs:
           ls -l dist
       - uses: actions/upload-artifact@v4
         with:
-          name: repro-${{ matrix.target }}
+          name: repro-exe-${{ matrix.label }}
           path: dist/
           if-no-files-found: error
       - name: Binary must be under 5 MB
@@ -121,7 +123,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sample-report-${{ matrix.target }}
+          name: test-report-${{ matrix.label }}
           path: ${{ runner.temp }}/good/repro-report
           if-no-files-found: ignore
 
@@ -144,14 +146,14 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: repro-*
+          pattern: repro-exe-*
           path: dist
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mv dist/repro-x86_64-pc-windows-msvc/repro.exe dist/repro-x86_64-pc-windows-msvc.exe
-          mv dist/repro-x86_64-unknown-linux-musl/repro dist/repro-x86_64-unknown-linux-musl
+          mv dist/repro-exe-windows-x64/repro.exe dist/repro-x86_64-pc-windows-msvc.exe
+          mv dist/repro-exe-linux-x64/repro dist/repro-x86_64-unknown-linux-musl
           gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" --generate-notes \
             dist/repro-x86_64-pc-windows-msvc.exe dist/repro-x86_64-unknown-linux-musl \
-            dist/repro-x86_64-pc-windows-msvc/add-to-path.ps1 dist/repro-x86_64-pc-windows-msvc/add-to-path.bat
+            dist/repro-exe-windows-x64/add-to-path.ps1 dist/repro-exe-windows-x64/add-to-path.bat

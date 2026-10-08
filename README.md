@@ -14,7 +14,7 @@ or a fresh machine reproduces key results (W8-MO-1, W10-MO-1).
 ## Install
 
 Download `repro.exe` (Windows) or `repro` (Linux, static musl) from the latest CI run
-(*Actions → ci → Artifacts*) or from a GitHub release, and put it on `PATH`. On Windows,
+(*Actions → ci → Artifacts → `repro-exe-windows-x64` / `repro-exe-linux-x64`*) or from a GitHub release, and put it on `PATH`. On Windows,
 double-click `add-to-path.bat` next to `repro.exe` (or run `.\add-to-path.ps1`; `-Remove` undoes it)
 to add that folder to your user PATH, then open a new terminal.
 Or build it: `cargo install --path .` (add `--features parquet` for Parquet row diffs).
